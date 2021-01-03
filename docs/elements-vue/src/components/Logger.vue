@@ -33,6 +33,13 @@
         <v-btn @click="send()" :disabled="state !== 'CONNECTED'">Send Message</v-btn>
       </v-card-actions>
     </v-card-text>
+    <v-card-title>
+      Decoded
+    </v-card-title>
+    <v-card-text>
+      <json-viewer :value="decoded" :expand-depth="4" :expanded="true" copyable>
+      </json-viewer>
+    </v-card-text>
   </v-card>
 </template>
 
@@ -42,12 +49,16 @@ import Component from "vue-class-component";
 
 import {Message, server, State} from "./Server"
 import {devices} from "@/components/Devices";
+// @ts-ignore
+// noinspection TypeScriptCheckImport
+import JsonViewer from 'vue-json-viewer';
 
-@Component({})
+@Component({ components: {JsonViewer}})
 export default class extends Vue {
   private connection : string = "ws://raspberrypi.fritz.box:1880/ws/enocean"
   private state: State = State.DISCONNECTED;
-  private message : String = ""
+  private message : string = ""
+  private decoded: any = {}
 
   toggle(){
     if (server.state !== State.DISCONNECTED){
@@ -81,7 +92,7 @@ export default class extends Vue {
   }
 
   decode(message: Message){
-    server.decode(message.message, devices)
+    this.decoded = server.decode(message.message, devices)
   }
 
   deleteMessage(message:Message){

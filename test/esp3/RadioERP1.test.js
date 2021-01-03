@@ -133,7 +133,7 @@ describe('RadioERP1 packets', () => {
     })
     it('decodes based on status with ref', () => {
       radio = RadioERP1.from('55000707017af640019d5a3c3001ffffffff2e00fa')
-      decoded = radio.decode('F6-02-01')
+      decoded = radio.decode('f6-02-01')
       expect(decoded.SV.value).toEqual(5)
     })
     it('eep bitmask enum', () => {

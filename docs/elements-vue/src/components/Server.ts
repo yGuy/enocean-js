@@ -94,18 +94,20 @@ class Server {
         }
     }
 
-    decode(message: string, devices: Device[]): any {
+    decode(message: string, devices: Device[]): any[] {
         const radio = RadioERP1.from(message)
-        console.log(radio)
+        const results: any[] = []
         devices.filter(d => d.address.toLowerCase() === radio.senderId).forEach(d => {
             d.validEeps.forEach(eep => {
+                eep = eep.toLowerCase()
                 if (Number.parseInt(eep.substr(0,2), 16) === radio.RORG){
                     console.log('decode ' +message+  ' as ' + eep)
                     const decoded = radio.decode(eep, "1");
-                    console.log(decoded)
+                    results.push({decoded, device:d})
                 }
             })
         })
+        return results;
     }
 
     disconnect() {
