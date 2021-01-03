@@ -1,0 +1,98 @@
+<template>
+  <v-card>
+    <v-card-text>
+      <v-text-field v-model="connection" :disabled="state !== 'DISCONNECTED'"></v-text-field>
+      <span>{{state}}</span>
+    </v-card-text>
+    <v-card-actions>
+      <v-btn @click="toggle()" v-text="'Toggle Connection'"></v-btn>
+      <v-btn @click="clear()">Clear Log</v-btn>
+    </v-card-actions>
+    <v-card-text>
+      <v-data-table dense :headers="headers" :items="items">
+        <template v-slot:item.actions="{ item }">
+          <v-icon
+              small
+              class="mr-2"
+              @click="decode(item)"
+          >
+            mdi-pencil
+          </v-icon>
+          <v-icon
+              small
+              @click="deleteMessage(item)"
+          >
+            mdi-delete
+          </v-icon>
+        </template>
+      </v-data-table>
+    </v-card-text>
+    <v-card-text>
+      <v-text-field v-model="message" :disabled="state !== 'CONNECTED'"></v-text-field>
+      <v-card-actions>
+        <v-btn @click="send()" :disabled="state !== 'CONNECTED'">Send Message</v-btn>
+      </v-card-actions>
+    </v-card-text>
+  </v-card>
+</template>
+
+<script lang="ts">
+import {Vue} from "vue-property-decorator";
+import Component from "vue-class-component";
+
+import {Message, server, State} from "./Server"
+import {devices} from "@/components/Devices";
+
+@Component({})
+export default class extends Vue {
+  private connection : string = "ws://raspberrypi.fritz.box:1880/ws/enocean"
+  private state: State = State.DISCONNECTED;
+  private message : String = ""
+
+  toggle(){
+    if (server.state !== State.DISCONNECTED){
+      server.disconnect();
+    } else {
+      server.connect(this.connection)
+    }
+  }
+
+  mounted(){
+    this.state = server.state
+    this.items = []
+    server.addStateListener(arg => {
+      this.state = arg.state
+    })
+    server.addMessageListener( arg => {
+      this.items.push(arg)
+    })
+    for (let m of server.messages){
+      this.items.push(m)
+    }
+    this.state = server.state
+  }
+
+  send(){
+    server.send(this.message)
+  }
+
+  clear(){
+    this.items = []
+  }
+
+  decode(message: Message){
+    server.decode(message.message, devices)
+  }
+
+  deleteMessage(message:Message){
+    this.items.splice(this.items.indexOf(message), 1)
+  }
+
+  private items: Message[] = []
+  private headers = [{text:'Time', align:'start', sortable: true, value:"time"}, {text:'Message', align:'start', sortable: false, value:"message"}, {value:'actions', align:'end', sortable:false, text:'Actions'}]
+}
+</script>
+
+<style scoped>
+
+</style>
