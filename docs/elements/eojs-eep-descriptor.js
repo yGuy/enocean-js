@@ -1,11 +1,11 @@
 /* eslint-disable no-undef  */
 import { html, css, LitElement } from 'https://cdn.klimapartner.net/modules/lit-element/lit-element.js'
 import { unsafeHTML } from 'https://cdn.klimapartner.net/modules/lit-html/directives/unsafe-html.js'
-// import { getEEP } from '../../packages/node_modules/@enocean-js/eep-transcoder/src/eep-transcoder.js'
-import { getEEP } from 'https://cdn.jsdelivr.net/npm/enocean-js/packages/enocean.js'
+import { getEEP } from '../../packages/node_modules/@enocean-js/eep-transcoder/src/eep-transcoder.js'
 import './eojs-eep-desc-header.js'
 import './eojs-eep-case.js'
 import './kaskadi-collapse.js'
+import {RadioERP1} from "../../packages/enocean.js";
 class EEPDescriptor extends LitElement {
   constructor () {
     super()
@@ -54,7 +54,8 @@ class EEPDescriptor extends LitElement {
     return {
       eep: { type: String },
       baseid: { type: String },
-      channel: { type: String }
+      channel: { type: String },
+      message: { type: String }
     }
   }
   render () {

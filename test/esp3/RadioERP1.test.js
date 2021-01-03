@@ -1,10 +1,9 @@
-/* eslint-disable no-undef  */
-// const ESP3Packet = require('../../').ESP3Packet
-const RadioERP1 = require('../../').RadioERP1
-// const ByteArray = require('../../').ByteArray
+import * as EEP from '../../packages/node_modules/@enocean-js/eep-transcoder/src/eep.js'
+import {RadioERP1}  from "../../packages/node_modules/@enocean-js/radio-erp1";
+import {assert} from 'chai'
 
-// const Response = require('../../').Response
-const assert = require('chai').assert
+let radio, decoded
+
 describe('RadioERP1 packets', () => {
   it('SHOULD be creatable from ESP3Packets', () => {
     var radio = RadioERP1.from({ data: 'f630aabbccdd30', optionalData: '03ffffffffff00', packetType: 1 })
@@ -36,14 +35,14 @@ describe('RadioERP1 packets', () => {
     assert.equal(radio.status, 0x30)
     radio.senderId = 'ccddeeff'
     assert.equal(radio.senderId, 'ccddeeff')
-    radio.subTelNum = 1
+    radio.subTelNum = 3
     assert.equal(radio.subTelNum, 3)
     radio.destinationId = 0xaaaaaaaa
     assert.equal(radio.destinationId, 'aaaaaaaa', 'destination')
     radio.RSSI = 0x80
-    assert.equal(radio.RSSI, 0xff)
-    radio.securityLeve = 1
-    assert.equal(radio.securityLevel, 0)
+    assert.equal(radio.RSSI, 0x80)
+    radio.securityLevel = 1
+    assert.equal(radio.securityLevel, 1)
     radio = RadioERP1.from({ payload: '00' })
     assert.equal(radio.RORG, 0xf6, '1BS')
     radio = RadioERP1.from({ payload: '0000000000' })
@@ -232,22 +231,124 @@ describe('RadioERP1 packets', () => {
   })
   describe('EEP encoding', () => {
     it('d2', () => {
+      radio = RadioERP1.from('55000a0701ebd264640004019d5a3c0001ffffffff35001d')
+      console.log(decoded = radio.decode('d2-05-02'))
+      radio = RadioERP1.from('55000a0701ebd263580004019d5a3c0001ffffffff40003a')
+      console.log(decoded = radio.decode('d2-05-02'))
+
+      radio = RadioERP1.from('55000707017af600002cd49c2001ffffffff4c0093')
+      console.log(decoded = radio.decode('f6-02-01'))
+      //                           55000707017af6400507dfae3001ffffffff4a00b4
+      radio = RadioERP1.from('55000707017af650002cd49c3001ffffffff4a005e')
+
+      assert.equal(radio.packetType, 1)
+      assert.equal(radio.RORG, 0xf6, 'RORG')
+      assert.equal(radio.payload[0], 0x50)
+      assert.equal(radio.senderId, '002cd49c')
+      assert.equal(radio.status, 0x30)
+      assert.equal(radio.T21, 1, 'T21')
+      assert.equal(radio.NU, 1, 'NU')
+      assert.equal(radio.subTelNum, 1)
+      assert.equal(radio.destinationId, 'ffffffff')
+      assert.equal(radio.RSSI, 0x4a)
+      assert.equal(radio.securityLevel, 0)
+      //assert.equal(radio.decode('f6-02-01').RA.value, 0x30)
+
+      console.log(decoded = radio.decode('f6-02-01'))
+
+      radio = RadioERP1.from({ payload: [0], id: '002cd49c' })
+      radio.encode({
+        R1:2,
+        EB: 1,
+        R2: 0,
+        SA: 0,
+      }, { eep: 'f6-02-01', channel: 0 })
+      radio.RSSI = 0x4a
+      radio.subTelNum = 1
+      radio.fixPacket()
+      assert.equal(radio.toString(),
+          '55000707017af650002cd49c3001ffffffff4a005e')
+
+
       radio = RadioERP1.from({ payload: [0], id: 'ff00ff00' })
-      radio.encode({ MT: 1, RMT: 1 }, { eep: 'd2-50-00', data: 0 })
+      radio.encode({ MT: 0, RMT: 1 }, { eep: 'd2-50-00'})
       radio.senderId = 'ff00ff00'
       decoded = radio.decode('d2-50-00')
 
       radio = RadioERP1.from({ payload: [0], id: 'ff00ff00' })
-      radio.encode({ POS: 31, ANG: 47, REPO: 0, LOCK: 0, CHN: 0, CMD: 1 }, { eep: 'd2-05-00', channel: 3, data: 1 })
+      radio.encode({ POS: 31, ANG: 47, REPO: 0, LOCK: 0, CHN: 0, CMD: 1 }, { eep: 'd2-05-00', channel: 3 })
       radio.senderId = 'ff00ff00'
+      decoded = radio.decode('d2-05-00')
+
+      radio = RadioERP1.from('55000a0701ebd264000004050ef58d0001ffffffff4900ec')
       decoded = radio.decode('d2-05-00')
 
       radio = RadioERP1.from('55000c070196d240009005012001a03d790001ffffffff5600d5')
       decoded = radio.decode('d2-32-02')
+
+
       assert.equal(decoded.CH1.value, 0.9)
       assert.equal(decoded.CH2.value, 0.5)
       assert.equal(decoded.CH3.value, 1.8)
       // console.log(setValueFieldName(50, 'a5-38-08', 'EDIM', ByteArray.from([0, 0, 0, 0]), 2))
     })
   })
+  for (let eep in EEP) {
+    const desc = EEP[eep]
+    for (let c in desc.case) {
+      const case_ = desc.case[c];
+      it('roundtrips ' + eep + " case " + c, () => {
+
+        function eep2JSON(c, eep, channel) {
+          var msg = {
+            'data': {},
+            'meta': {
+              'eep': eep,
+              'channel': channel
+            }
+          }
+
+          c.datafield && c.datafield.forEach(item => {
+            if (!item.reserved) {
+              if (item.enum && item.enum.item) {
+                if (item.shortcut === "LRNB") {
+                  msg.data[item.shortcut] = 1;
+                } else if (Array.isArray(item.enum.item)) {
+                  const val = parseInt(item.enum.item[0].value)
+                  msg.data[item.shortcut] = isNaN(val) ? 0 : val;
+                } else {
+                  const val = parseInt(item.enum.item.value)
+                  msg.data[item.shortcut] = isNaN(val) ? 0 : val;
+                }
+              } else if (item.scale) {
+                msg.data[item.shortcut] = parseInt(item.scale.min)
+              } else {
+                msg.data[item.shortcut] = 0
+              }
+            }
+          })
+          if (c.condition && c.condition.statusfield) {
+            msg.meta.status = parseInt(`00${c.condition.statusfield[0].value}${c.condition.statusfield[1].value}0000`, 2)
+          }
+          if (c.condition && c.condition.direction) {
+            msg.meta.direction = parseInt(c.condition.direction)
+          }
+          return msg
+        }
+
+
+        const channel = 3
+        const json = eep2JSON(case_, desc, 3)
+        const rorg = parseInt(eep.substr(0, 2), 16);
+        const radio = RadioERP1.from({rorg, payload: [0], id: 'ff00ff00'})
+        const data = radio.encode(json.data, {eep: json.meta.eep.eep, channel, direction: json.meta.direction, status: json.meta.status})
+        const radioDecoded = RadioERP1.from(radio.toString())
+        const decoded = radioDecoded.decode(json.meta.eep.eep, json.meta.direction)
+        const radio2 = RadioERP1.from({rorg, payload: [0], id: 'ff00ff00'})
+        const data2 = radio2.encode(decoded, {eep: json.meta.eep.eep, channel, direction: json.meta.direction, status: json.meta.status})
+
+        assert.equal(radio.toString(), radio2.toString())
+      })
+    }
+  }
 })

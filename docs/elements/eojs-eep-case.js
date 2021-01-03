@@ -1,7 +1,7 @@
 /* eslint-disable no-undef  */
 import { html, css, LitElement } from 'https://cdn.klimapartner.net/modules/lit-element/lit-element.js'
 import { unsafeHTML } from 'https://cdn.klimapartner.net/modules/lit-html/directives/unsafe-html.js'
-import { RadioERP1, ByteArray } from 'https://cdn.jsdelivr.net/npm/enocean-js/packages/enocean.js'
+import { RadioERP1, ByteArray } from '../../packages/enocean.js'
 import './eojs-eep-case-head.js'
 import './eojs-eep-field.js'
 export class EEPCase extends LitElement {
@@ -65,33 +65,41 @@ export class EEPCase extends LitElement {
   }
   eep2JSON (c, eep, channel = 1) {
     var msg = {
-      'data': {},
-      'payload':'00',
+      'data':{},
       'meta': {
         'eep': eep,
         'channel': parseInt(this.channel)
       }
     }
 
-    c.datafield.forEach(item => {
+    c.datafield && c.datafield.forEach(item => {
       if (!item.reserved) {
-        msg.data[item.shortcut] = ''
+        if (item.enum && item.enum.item) {
+          if (item.shortcut === "LRNB") {
+            msg.data[item.shortcut] = 1;
+          } else if (Array.isArray(item.enum.item)) {
+            const val = parseInt(item.enum.item[0].value)
+            msg.data[item.shortcut] = isNaN(val) ? 0 : val;
+          } else {
+            const val = parseInt(item.enum.item.value)
+            msg.data[item.shortcut] = isNaN(val) ? 0 : val;
+          }
+        } else if (item.scale) {
+          msg.data[item.shortcut] = parseInt(item.scale.min)
+        } else {
+          msg.data[item.shortcut] = 0
+        }
       }
     })
     var fields = this.shadowRoot.querySelectorAll('eojs-eep-field')
-    // console.log(fields)
     fields.forEach(item => {
-      msg.data[item.field.shortcut] = item.value
+      if (item.field.shortcut in msg.data){
+        msg.data[item.field.shortcut] = item.value
+      }
     })
 
     if (c.condition && c.condition.statusfield) {
       msg.meta.status = parseInt(`00${c.condition.statusfield[0].value}${c.condition.statusfield[1].value}0000`, 2)
-    }
-    if (c.condition && c.condition.datafield) {
-      let payload = ByteArray.from('00000000');
-      payload.setValue(parseInt(c.condition.datafield.value), parseInt(c.condition.datafield.bitoffs), parseInt(c.condition.datafield.bitsize))
-      msg.payload = payload.toString()
-      msg.meta.data = parseInt(c.condition.datafield.value)
     }
     if (c.condition && c.condition.direction) {
       msg.meta.direction = parseInt(c.condition.direction)
@@ -101,11 +109,11 @@ export class EEPCase extends LitElement {
   render () {
     var json = this.eep2JSON(this.case, this.eep)
 
-    this.radio = RadioERP1.from({ rorg: this.eep.split('-')[0], payload: json.payload, id: parseInt(this.baseid, 16) + parseInt(this.channel) })
+    this.radio = RadioERP1.from({ rorg: this.eep.split('-')[0], payload:'00', id: parseInt(this.baseid, 16) + parseInt(this.channel) })
     this.radio.encode(json.data, json.meta)
-    delete json.payload
+    var decoded = this.radio.decode(this.eep, json.meta.direction || 1) || {}
     return html`
-    ${this.case.condition && this.case.condition.statusfield ? html`<eojs-eep-case-head type="Status" field="Statusfield" value="${parseInt(`00${this.case.condition.statusfield[0].value}${this.case.condition.statusfield[1].value}0000`, 2)}" title="${this.case.title}" desc="${this.case.description}"></eojs-eep-case-head>` : ''}
+    ${this.case.condition && this.case.condition.statusfield ? html`<eojs-eep-case-head type="Status" field="Statusfield" value="${this.radio.status}" title="${this.case.title}" desc="${this.case.description}"></eojs-eep-case-head>` : ''}
     ${this.case.condition && this.case.condition.datafield ? html`<eojs-eep-case-head type="Datafield" field="${getShortcutFromOffset(this.case, this.case.condition.datafield.bitoffs).shortcut}" value="${this.case.condition.datafield.value}" title="${this.case.title}" desc="${this.case.description}"></eojs-eep-case-head>` : ''}
     ${this.case.condition && this.case.condition.direction ? html`<eojs-eep-case-head type="Direction" field="" value="${this.case.condition.direction}" title="${this.case.title}" desc="${this.case.description}"></eojs-eep-case-head>` : ''}
         <div class="main">
