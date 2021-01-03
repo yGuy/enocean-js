@@ -17,7 +17,7 @@
   },
   "scripts": {
     "test": "standard --fix && nyc --reporter=lcov --reporter=text-summary mocha --recursive test",
-    "test_only": "mocha --recursive test",
+    "test_only": "mocha --recursive test --require esm",
     "coverage": "nyc --reporter=lcov mocha --recursive test && xdg-open ./coverage/lcov-report/index.html",
     "fix": "standard --fix"
   },
@@ -44,7 +44,7 @@
     "chai": "^4.2.0",
     "express": "^4.17.1",
     "express-rate-limit": "^5.1.1",
-    "mocha": "^7.0.1",
+    "mocha": "^8.2.1",
     "nyc": "^15.0.0",
     "serialport": "^8.0.7",
     "sinon": "^9.0.0",
