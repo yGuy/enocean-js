@@ -35,8 +35,7 @@
 import Vue from 'vue'
 import Component from "vue-class-component";
 import EepItem from "@/components/EepItem.vue";
-import {EEPs} from '@/components/eeps'
-import {Eep} from '@/components/eep'
+import {EEP as EEPs, Eep} from '@enocean-js/eep-transcoder'
 
 const allEEPs: Eep[] = Object.values(EEPs);
 

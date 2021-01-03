@@ -17,7 +17,8 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import {ItemElement} from "./eep";
+import {ItemElement} from '@enocean-js/eep-transcoder'
+
 import {Prop} from "vue-property-decorator";
 
 function parseValue (v: string): number {

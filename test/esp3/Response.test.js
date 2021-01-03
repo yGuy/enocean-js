@@ -1,8 +1,7 @@
 /* eslint-disable no-undef  */
 // const ESP3Packet = require('../../').ESP3Packet
-const Response = require('../../').Response
+import {Response} from '@enocean-js/esp3-packets'
 const EO = require('../../')
-const assert = require('chai').assert
 describe('Response packets', () => {
   it('...', () => {
     var packet = Response.encode(EO.RET_OK, 'ffa08700', 9)
@@ -31,13 +30,13 @@ describe('Response packets', () => {
       ]
     }
     var res = packet.decode(desc)
-    assert.equal(res.baseId, 'ffa08700')
-    assert.equal(res.remainingWriteCycles, 9)
-    assert.equal(res.test2[0], 9)
-    assert.equal(res.test3, 123)
+    expect(res.baseId).toEqual('ffa08700')
+    expect(res.remainingWriteCycles).toEqual(9)
+    expect(res.test2[0]).toEqual(9)
+    expect(res.test3).toEqual(123)
 
     packet.decode()
-    assert.equal(res.returnCode, 0)
-    assert.equal(res.returnMsg, 'RET_OK')
+    expect(res.returnCode).toEqual(0)
+    expect(res.returnMsg).toEqual('RET_OK')
   })
 })

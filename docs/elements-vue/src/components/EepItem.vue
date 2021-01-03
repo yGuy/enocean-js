@@ -17,7 +17,7 @@
 
 <script lang="ts">
 import {Component, Prop, Vue} from "vue-property-decorator";
-import {Eep} from "@/components/eep";
+import {Eep} from "@enocean-js/eep-transcoder";
 import EepCase from "@/components/EepCase.vue";
 @Component({
   components: {EepCase}

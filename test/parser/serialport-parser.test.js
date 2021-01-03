@@ -1,7 +1,7 @@
 /* eslint-disable no-undef  */
-const EO = require('../../')
-const assert = require('chai').assert
-const parsers = [{ Parser: EO.ESP3Parser, name: 'ESP3parser' }, { Parser: EO.ESP3CallbackParser, name: 'ESP3CallbackParser' }]
+import {ESP3CallbackParser} from "@enocean-js/serialport-parser";
+import {ESP3Parser} from "@enocean-js/serialport-parser";
+const parsers = [{ Parser: ESP3Parser, name: 'ESP3parser' }, { Parser: ESP3CallbackParser, name: 'ESP3CallbackParser' }]
 const sinon = require('sinon')
 
 const telegrams = [
@@ -12,95 +12,104 @@ const telegrams = [
   '55000a0701eba540300287ffd9b7e50001ffffffff440016' // 4 | _4BS_Teach_In_A5
 ]
 
-describe('serialport enocean parser', function () {
+describe('serialport enocean parser', () => {
   parsers.forEach(currentParser => {
     var esp3SimpleParser = new currentParser.Parser()
-    describe(`${currentParser.name}`, function () {
-      describe('from proper byte stream:', function () {
-        it('can fetch all ESP3 packets', function () {
+    describe(`${currentParser.name}`, () => {
+      describe('from proper byte stream:', () => {
+        it('can fetch all ESP3 packets', () => {
           const spy = sinon.spy()
           esp3SimpleParser.on('data', spy)
           for (const key in telegrams) {
             const telegramm = Buffer.from(telegrams[key], 'hex')
             esp3SimpleParser.write(telegramm)
-            assert.deepEqual(spy.getCall(key).args[0].toString('hex'), telegramm.toString('hex'))
+            expect(spy.getCall(key).args[0].toString('hex')).toEqual(telegramm.toString('hex'))
           }
           esp3SimpleParser.removeListener('data', spy)
         })
 
-        it('can fetch all ESP3 packets in large byte stream', function () {
+        it('can fetch all ESP3 packets in large byte stream', () => {
           const spy = sinon.spy()
           esp3SimpleParser.on('data', spy)
           const telegramsAsBuffer = telegrams.slice(0).map(telegramAsString => Buffer.from(telegramAsString, 'hex'))
           const largeByteStream = Buffer.concat(telegramsAsBuffer)
 
           esp3SimpleParser.write(largeByteStream)
-          assert.equal(spy.callCount, telegrams.length, 'Received unexpected count of packets.')
+          expect(spy.callCount).toEqual(telegrams.length)
           esp3SimpleParser.removeListener('data', spy)
         })
       })
 
-      describe('from messy byte stream:', function () {
+      describe('from messy byte stream:', () => {
         /**
          * ESP3 defines: "If the Header does not match the CRC8H, the value 0x55 does not correspond to Sync.-Byte.
          * The next 0x55 within the data stream is picked and the verification repeated."
          */
-        it('packets MUST be emitted, if messy bytes occur before the header was detected and there are at least 5 bytes to real sync byte', function () {
-          const spy = sinon.spy()
-          esp3SimpleParser.on('data', spy).on('error', err => err)
-          const messyBytes = [
-            '55a03d790001',
-            '557017af60ff',
-            '55a010001a03',
-            '55af600ffd9b7812001f',
-            '55707017af600ffd9b7812001ffc',
-            '550707017ad509ffdba5ed0001ffffffdf'
-          ]
-          const messyBytesBetweenTelegramsAsBuffer = telegrams.slice(0).map(
-            telegramAsString => Buffer.from(
-              messyBytes[Math.floor(Math.random() * messyBytes.length)] + telegramAsString,
-              'hex'
+        it(
+          'packets MUST be emitted, if messy bytes occur before the header was detected and there are at least 5 bytes to real sync byte',
+          () => {
+            const spy = sinon.spy()
+            esp3SimpleParser.on('data', spy).on('error', err => err)
+            const messyBytes = [
+              '55a03d790001',
+              '557017af60ff',
+              '55a010001a03',
+              '55af600ffd9b7812001f',
+              '55707017af600ffd9b7812001ffc',
+              '550707017ad509ffdba5ed0001ffffffdf'
+            ]
+            const messyBytesBetweenTelegramsAsBuffer = telegrams.slice(0).map(
+              telegramAsString => Buffer.from(
+                messyBytes[Math.floor(Math.random() * messyBytes.length)] + telegramAsString,
+                'hex'
+              )
             )
-          )
-          const largeAndMessyByteStream = Buffer.concat(messyBytesBetweenTelegramsAsBuffer)
+            const largeAndMessyByteStream = Buffer.concat(messyBytesBetweenTelegramsAsBuffer)
 
-          esp3SimpleParser.write(largeAndMessyByteStream)
-          assert.equal(spy.callCount, telegrams.length, 'Received unexpected count of packets.')
-          esp3SimpleParser.removeListener('data', spy)
-        })
-        it('packet SHOULD be emitted, if not received in one go', function () {
+            esp3SimpleParser.write(largeAndMessyByteStream)
+            expect(spy.callCount).toEqual(telegrams.length)
+            esp3SimpleParser.removeListener('data', spy)
+          }
+        )
+        it('packet SHOULD be emitted, if not received in one go', () => {
           const spy = sinon.spy()
           esp3SimpleParser.on('data', spy)
 
           esp3SimpleParser.write(Buffer.from('55000a0701eba5', 'hex'))
           esp3SimpleParser.write(Buffer.from('c87f710fffdba5e40001ffffffff47000d', 'hex'))
-          assert.equal(spy.called, true, '')
+          expect(spy.called).toEqual(true)
           esp3SimpleParser.removeListener('data', spy)
         })
-        it('packet SHOULD NOT be emitted, if data or optional data is invalid', function () {
-          const spy = sinon.spy()
-          esp3SimpleParser.on('data', spy)
+        it(
+          'packet SHOULD NOT be emitted, if data or optional data is invalid',
+          () => {
+            const spy = sinon.spy()
+            esp3SimpleParser.on('data', spy)
 
-          const withBrokenCRC8Data = telegrams.slice(0).map(
-            telegramAsString => Buffer.from(
-              telegramAsString.substring(0, telegramAsString.length - 2) + '00',
-              'hex'
+            const withBrokenCRC8Data = telegrams.slice(0).map(
+              telegramAsString => Buffer.from(
+                telegramAsString.substring(0, telegramAsString.length - 2) + '00',
+                'hex'
+              )
             )
-          )
-          const byteStream = Buffer.concat(withBrokenCRC8Data)
-          esp3SimpleParser.write(byteStream)
-          assert.equal(spy.callCount, 0, 'Broken packets are emitted.')
-          esp3SimpleParser.removeListener('data', spy)
-        })
-        it('packet SHOULD be emitted, if it starts in the middle of another packets header', function () {
-          const spy = sinon.spy()
-          esp3SimpleParser.on('data', spy)
-          esp3SimpleParser.write(Buffer.from('55005500010005700838', 'hex')) // sync code in the middle of the header
-          esp3SimpleParser.write(Buffer.from('55000100015500010005700838', 'hex')) // CRC8H is the sync code of the next packet
-          assert.equal(spy.callCount, 2, '')
-          esp3SimpleParser.removeListener('data', spy)
-        })
-        it('an Error SHOULD be thrown if the packet exeeds 1000 Bytes', function () {
+            const byteStream = Buffer.concat(withBrokenCRC8Data)
+            esp3SimpleParser.write(byteStream)
+            expect(spy.callCount).toEqual(0)
+            esp3SimpleParser.removeListener('data', spy)
+          }
+        )
+        it(
+          'packet SHOULD be emitted, if it starts in the middle of another packets header',
+          () => {
+            const spy = sinon.spy()
+            esp3SimpleParser.on('data', spy)
+            esp3SimpleParser.write(Buffer.from('55005500010005700838', 'hex')) // sync code in the middle of the header
+            esp3SimpleParser.write(Buffer.from('55000100015500010005700838', 'hex')) // CRC8H is the sync code of the next packet
+            expect(spy.callCount).toEqual(2)
+            esp3SimpleParser.removeListener('data', spy)
+          }
+        )
+        it('an Error SHOULD be thrown if the packet exeeds 1000 Bytes', () => {
           const spy = sinon.spy()
           esp3SimpleParser.on('error', spy)
           var buf = [0x55, 0xff, 0xff, 0xff, 0x01, 0x3d]
@@ -108,17 +117,20 @@ describe('serialport enocean parser', function () {
             buf.push(0)
           }
           esp3SimpleParser.write(Buffer.from(buf))
-          assert.equal(spy.callCount, 1, '')
+          expect(spy.callCount).toEqual(1)
           esp3SimpleParser.removeListener('error', spy)
         })
-        it('an Error SHOULD be thrown if the packet has dataLength and optionalLength of 0', function () {
-          const spy = sinon.spy()
-          esp3SimpleParser.on('error', spy)
-          esp3SimpleParser.write(Buffer.from('55000000010700', 'hex'))
-          assert.equal(spy.callCount, 1, '')
-          esp3SimpleParser.removeListener('error', spy)
-        })
-        it('under siege', function () {
+        it(
+          'an Error SHOULD be thrown if the packet has dataLength and optionalLength of 0',
+          () => {
+            const spy = sinon.spy()
+            esp3SimpleParser.on('error', spy)
+            esp3SimpleParser.write(Buffer.from('55000000010700', 'hex'))
+            expect(spy.callCount).toEqual(1)
+            esp3SimpleParser.removeListener('error', spy)
+          }
+        )
+        it('under siege', () => {
           const spy = sinon.spy()
           const parser = new currentParser.Parser({ maxBufferSize: 32 })
           var ec = [0, 0, 0, 0, 0]
@@ -133,7 +145,7 @@ describe('serialport enocean parser', function () {
             parser.write(Buffer.from('55005500010005700838', 'hex'))
             // assert.equal(errorSpy.callCount, t, `${esp3SimpleParser.currentESP3Packet.toString()} ind state ${esp3SimpleParser.state}`)
           }
-          assert.isAbove(spy.callCount, 995, `${ec}`)
+          expect(spy.callCount).toBeGreaterThan(995)
           parser.removeListener('error', spy)
           parser.removeListener('data', spy)
         })

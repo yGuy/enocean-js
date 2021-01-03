@@ -29,7 +29,7 @@
 <script lang="ts">
 import {Prop, Vue} from "vue-property-decorator";
 
-import {Case, Eep} from "@/components/eep";
+import {Case, Eep} from '@enocean-js/eep-transcoder';
 import Component from "vue-class-component";
 import EepField from "@/components/EepField.vue";
 

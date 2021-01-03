@@ -14,7 +14,11 @@
     "vue-class-component": "^7.2.3",
     "vue-property-decorator": "^8.4.2",
     "vue-router": "^3.2.0",
-    "vuetify": "^2.2.11"
+    "vuetify": "^2.2.11",
+    "@enocean-js/byte-array": "0.1.0",
+    "@enocean-js/eep-transcoder": "0.1.0",
+    "@enocean-js/pretty-printer": "0.0.16",
+    "@enocean-js/radio-erp1": "0.0.17"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",

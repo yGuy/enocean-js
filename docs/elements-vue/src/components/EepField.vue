@@ -22,7 +22,7 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import {DatafieldElement, ItemElement} from "./eep";
+import {DatafieldElement, ItemElement} from '@enocean-js/eep-transcoder';
 import {Prop} from "vue-property-decorator";
 import EepFieldItem from "@/components/EepFieldItem.vue";
 
