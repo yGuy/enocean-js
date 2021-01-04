@@ -1,5 +1,5 @@
 /* eslint-disable no-undef  */
-import {toCRC8, getCRC8} from "@enocean-js/crc8";
+import { toCRC8, getCRC8 } from '@enocean-js/crc8'
 
 describe('CRC8 Calculation', () => {
   describe('with getCRC8(buffer)', () => {

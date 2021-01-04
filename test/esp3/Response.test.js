@@ -1,6 +1,6 @@
 /* eslint-disable no-undef  */
 // const ESP3Packet = require('../../').ESP3Packet
-import {Response} from '@enocean-js/esp3-packets'
+import { Response } from '@enocean-js/esp3-packets'
 const EO = require('../../')
 describe('Response packets', () => {
   it('...', () => {

@@ -1,5 +1,5 @@
 /* eslint-disable no-undef  */
-import ByteArray from "@enocean-js/byte-array";
+import ByteArray from '@enocean-js/byte-array'
 
 describe('ByteArray', () => {
   it('SHOULD behave like an Array', () => {

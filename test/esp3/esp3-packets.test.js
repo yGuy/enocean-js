@@ -1,6 +1,6 @@
 /* eslint-disable no-undef  */
 import ESP3Packet from '@enocean-js/esp3-packet'
-import {pretty} from "@enocean-js/pretty-printer";
+import { pretty } from '@enocean-js/pretty-printer'
 
 describe('ESP3Packet', () => {
   it('SHOULD be creatable with new', () => {

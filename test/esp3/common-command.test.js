@@ -6,11 +6,10 @@ import {
   CO_RD_VERSION,
   CO_RD_SYS_LOG,
   CO_RD_IDBASE
-} from "@enocean-js/common-command";
-import ByteArray from "@enocean-js/byte-array";
-import {Response} from "@enocean-js/esp3-packets";
+} from '@enocean-js/common-command'
+import ByteArray from '@enocean-js/byte-array'
+import { Response } from '@enocean-js/esp3-packets'
 const EO = require('../../')
-
 
 describe('CommonCommand', () => {
   it('CO_WR_RESET', () => {
@@ -37,8 +36,8 @@ describe('CommonCommand', () => {
     var ret = res.decode(cc.commandType.responseDefinition)
     expect(ret.appVersion.toString()).toEqual('010203ff')
     expect(ret.apiVersion.toString()).toEqual('040506ff')
-    expect(ret.chipId).toEqual(1)
-    expect(ret.chipVersion).toEqual(2)
+    expect(ret.chipId.toString()).toEqual('00000001')
+    expect(ret.chipVersion.toString()).toEqual('00000002')
     expect(ret.appDescription).toEqual('ENOCEAN')
   })
   it('CO_RD_SYS_LOG', () => {

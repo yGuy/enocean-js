@@ -1,5 +1,7 @@
 import { EEP } from '@enocean-js/eep-transcoder'
-import {RadioERP1} from "@enocean-js/radio-erp1";
+import { RadioERP1 } from '@enocean-js/radio-erp1'
+
+import { describe, expect, it } from '@jest/globals'
 
 let radio, decoded
 
@@ -18,7 +20,7 @@ describe('RadioERP1 packets', () => {
     expect(radio.RSSI).toEqual(0xff)
     expect(radio.securityLevel).toEqual(0)
     expect(radio.teachIn).toEqual(true)
-    expect(radio.decode('f6-02-03').RA.value).toEqual(0x30)
+    expect(radio.decode('f6-02-03').RA.value).toEqual('0x30')
   })
   it('SHOULD be manipulable with interface methods', () => {
     var radio = RadioERP1.from({ payload: '00000000' })
@@ -115,25 +117,20 @@ describe('RadioERP1 packets', () => {
     it('Enum values with range', () => {
       radio = RadioERP1.from({ payload: [100, 0, 0, 0x08] })
       decoded = radio.decode('a5-10-1f')
-      expect(decoded.FAN.min).toEqual("0")
-      expect(decoded.FAN.max).toEqual("144")
+      expect(decoded.FAN.min).toEqual('0')
+      expect(decoded.FAN.max).toEqual('144')
     })
     it('Enum with single value', () => {
       radio = RadioERP1.from({ payload: [0x11] })
       decoded = radio.decode('f6-05-01')
-      expect(decoded.WAS.value).toEqual("0x11")
+      expect(decoded.WAS.value).toEqual('0x11')
       radio = RadioERP1.from({ payload: [0x21] })
       decoded = radio.decode('f6-05-01')
-      expect(decoded.WAS.value).toEqual(null)
+      expect(decoded.WAS.value).toBeUndefined()
     })
     it('eep with complete ref to other eep', () => {
       radio = RadioERP1.from({ payload: [250, 0, 0, 0x08] })
       decoded = radio.decode('a5-10-1e')
-      expect(decoded.SV.value).toEqual(5)
-    })
-    it('decodes based on status with ref', () => {
-      radio = RadioERP1.from('55000707017af640019d5a3c3001ffffffff2e00fa')
-      decoded = radio.decode('f6-02-01')
       expect(decoded.SV.value).toEqual(5)
     })
     it('eep bitmask enum', () => {
@@ -168,7 +165,7 @@ describe('RadioERP1 packets', () => {
       expect(decoded.Conc.value).toEqual(512)
       radio = RadioERP1.from({ payload: [0x0f, 0x02, 0x00, 0x0a] })
       decoded = radio.decode('a5-09-0b')
-      expect(decoded.Ract.value.toFixed(1)).toEqual(51.2)
+      expect(decoded.Ract.value.toFixed(1)).toEqual('51.2')
     })
     it('RPS with different status codes', () => {
       radio = RadioERP1.from({ payload: 0, status: 0x30 })
@@ -198,10 +195,10 @@ describe('RadioERP1 packets', () => {
     })
     it('MSB-LSB splited fields', () => {
       radio = RadioERP1.from({ payload: [0x00, 0x00, 0x00, 0x08] })
-      radio.encode({ LOT: 90, LAT: 0, ID: 6 }, { eep: 'a5-13-06', data: 6 })
+      radio.encode({ LOT: 90, LAT: 0, ID: 6 }, { eep: 'a5-13-06' })
       decoded = radio.decode('a5-13-06')
-      expect(decoded.LOT.value.toFixed(0)).toEqual(90)
-      expect(decoded.LAT.value.toFixed(0)).toEqual(0)
+      expect(decoded.LOT.value.toFixed(0)).toEqual('90')
+      expect(decoded.LAT.value.toFixed(0)).toEqual('0')
 
       radio = RadioERP1.from({ payload: [0x00, 0x00, 0x00, 0x08] })
       radio.encode({ SRA: 1900 }, { eep: 'a5-13-10' })
@@ -216,14 +213,14 @@ describe('RadioERP1 packets', () => {
     })
     it('a5-38-08', () => {
       radio = RadioERP1.from({ payload: [0x00, 0x00, 0x00, 0x08] })
-      radio.encode({ COM: 1, TIM: 100 }, { eep: 'a5-38-08', data: 1 })
+      radio.encode({ COM: 1, TIM: 100 }, { eep: 'a5-38-08' })
       decoded = radio.decode('a5-38-08')
-      expect(decoded.TIM.value.toFixed(0)).toEqual(100)
+      expect(decoded.TIM.value.toFixed(0)).toEqual('100')
 
       radio = RadioERP1.from({ payload: [0x00, 0x00, 0x00, 0x08] })
-      radio.encode({ COM: 2, EDIM: 50 }, { eep: 'a5-38-08', data: 2 })
+      radio.encode({ COM: 2, EDIM: 50 }, { eep: 'a5-38-08' })
       decoded = radio.decode('a5-38-08')
-      expect(decoded.EDIM.value.toFixed(0)).toEqual(50)
+      expect(decoded.EDIM.value.toFixed(0)).toEqual('50')
     })
   })
   describe('creating teach in telegrams', () => {
@@ -256,25 +253,24 @@ describe('RadioERP1 packets', () => {
       expect(radio.destinationId).toEqual('ffffffff')
       expect(radio.RSSI).toEqual(0x4a)
       expect(radio.securityLevel).toEqual(0)
-      //assert.equal(radio.decode('f6-02-01').RA.value, 0x30)
+      // assert.equal(radio.decode('f6-02-01').RA.value, 0x30)
 
       console.log(decoded = radio.decode('f6-02-01'))
 
       radio = RadioERP1.from({ payload: [0], id: '002cd49c' })
       radio.encode({
-        R1:2,
+        R1: 2,
         EB: 1,
         R2: 0,
-        SA: 0,
+        SA: 0
       }, { eep: 'f6-02-01', channel: 0 })
       radio.RSSI = 0x4a
       radio.subTelNum = 1
       radio.fixPacket()
       expect(radio.toString()).toEqual('55000707017af650002cd49c3001ffffffff4a005e')
 
-
       radio = RadioERP1.from({ payload: [0], id: 'ff00ff00' })
-      radio.encode({ MT: 0, RMT: 1 }, { eep: 'd2-50-00'})
+      radio.encode({ MT: 0, RMT: 1 }, { eep: 'd2-50-00' })
       radio.senderId = 'ff00ff00'
       decoded = radio.decode('d2-50-00')
 
@@ -289,69 +285,73 @@ describe('RadioERP1 packets', () => {
       radio = RadioERP1.from('55000c070196d240009005012001a03d790001ffffffff5600d5')
       decoded = radio.decode('d2-32-02')
 
-
       expect(decoded.CH1.value).toEqual(0.9)
       expect(decoded.CH2.value).toEqual(0.5)
       expect(decoded.CH3.value).toEqual(1.8)
       // console.log(setValueFieldName(50, 'a5-38-08', 'EDIM', ByteArray.from([0, 0, 0, 0]), 2))
     })
   })
-  for (let eep in EEP) {
-    const desc = EEP[eep]
-    for (let c in desc.case) {
-      const case_ = desc.case[c];
-      it('roundtrips ' + eep + " case " + c, () => {
-
-        function eep2JSON(c, eep, channel) {
-          var msg = {
-            'data': {},
-            'meta': {
-              'eep': eep,
-              'channel': channel
-            }
-          }
-
-          c.datafield && c.datafield.forEach(item => {
-            if (!item.reserved) {
-              if (item.enum && item.enum.item) {
-                if (item.shortcut === "LRNB") {
-                  msg.data[item.shortcut] = 1;
-                } else if (Array.isArray(item.enum.item)) {
-                  const val = parseInt(item.enum.item[0].value)
-                  msg.data[item.shortcut] = isNaN(val) ? 0 : val;
-                } else {
-                  const val = parseInt(item.enum.item.value)
-                  msg.data[item.shortcut] = isNaN(val) ? 0 : val;
-                }
-              } else if (item.scale) {
-                msg.data[item.shortcut] = parseInt(item.scale.min)
-              } else {
-                msg.data[item.shortcut] = 0
-              }
-            }
-          })
-          if (c.condition && c.condition.statusfield) {
-            msg.meta.status = parseInt(`00${c.condition.statusfield[0].value}${c.condition.statusfield[1].value}0000`, 2)
-          }
-          if (c.condition && c.condition.direction) {
-            msg.meta.direction = parseInt(c.condition.direction)
-          }
-          return msg
+  const table = Object.entries(EEP).filter(([name, desc]) => Array.isArray(desc.case)).flatMap(([name, desc]) => desc.case.map((case_, i) => ([name, i, desc, case_])))
+  describe.each(table)('Roundtrip %s Case %i', (eep, index, desc, case_) => {
+    function eep2JSON (c, eep, channel) {
+      var msg = {
+        data: {},
+        meta: {
+          eep: eep,
+          channel: channel
         }
+      }
 
-
-        const channel = 3
-        const json = eep2JSON(case_, desc, 3)
-        const rorg = parseInt(eep.substr(0, 2), 16);
-        const radio = RadioERP1.from({rorg, payload: [0], id: 'ff00ff00'})
-        const data = radio.encode(json.data, {eep: json.meta.eep.eep, channel, direction: json.meta.direction, status: json.meta.status})
-        const radioDecoded = RadioERP1.from(radio.toString())
-        const decoded = radioDecoded.decode(json.meta.eep.eep, json.meta.direction)
-        const radio2 = RadioERP1.from({rorg, payload: [0], id: 'ff00ff00'})
-        const data2 = radio2.encode(decoded, {eep: json.meta.eep.eep, channel, direction: json.meta.direction, status: json.meta.status})
-
-        expect(radio.toString()).toEqual(radio2.toString())
+      c.datafield && c.datafield.forEach(item => {
+        if (!item.reserved) {
+          if (item.enum && item.enum.item) {
+            if (item.shortcut === 'LRNB') {
+              msg.data[item.shortcut] = 1
+            } else if (Array.isArray(item.enum.item)) {
+              const val = parseInt(item.enum.item[0].value)
+              msg.data[item.shortcut] = isNaN(val) ? 0 : val
+            } else {
+              const val = parseInt(item.enum.item.value)
+              msg.data[item.shortcut] = isNaN(val) ? 0 : val
+            }
+          } else if (item.scale) {
+            msg.data[item.shortcut] = parseInt(item.scale.min)
+          } else {
+            msg.data[item.shortcut] = 0
+          }
+        }
       })
+      if (c.condition && c.condition.statusfield) {
+        msg.meta.status = parseInt(`00${c.condition.statusfield[0].value}${c.condition.statusfield[1].value}0000`, 2)
+      }
+      if (c.condition && c.condition.direction) {
+        msg.meta.direction = parseInt(c.condition.direction)
+      }
+      return msg
     }
-  }
+
+    const channel = 3
+    const json = eep2JSON(case_, desc, 3)
+    const rorg = parseInt(eep.substr(0, 2), 16)
+    const radio = RadioERP1.from({ rorg, payload: [0], id: 'ff00ff00' })
+    const data = radio.encode(json.data, {
+      eep: json.meta.eep.eep,
+      channel,
+      direction: json.meta.direction,
+      status: json.meta.status
+    })
+    const radioDecoded = RadioERP1.from(radio.toString())
+    const decoded = radioDecoded.decode(json.meta.eep.eep, json.meta.direction)
+    const radio2 = RadioERP1.from({ rorg, payload: [0], id: 'ff00ff00' })
+    const data2 = radio2.encode(decoded, {
+      eep: json.meta.eep.eep,
+      channel,
+      direction: json.meta.direction,
+      status: json.meta.status
+    })
+
+    expect(data).toEqual(data2)
+
+    expect(radio.toString()).toEqual(radio2.toString())
+  })
 })

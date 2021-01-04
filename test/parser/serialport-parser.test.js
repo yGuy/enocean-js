@@ -1,6 +1,5 @@
 /* eslint-disable no-undef  */
-import {ESP3CallbackParser} from "@enocean-js/serialport-parser";
-import {ESP3Parser} from "@enocean-js/serialport-parser";
+import { ESP3CallbackParser, ESP3Parser } from '@enocean-js/serialport-parser'
 const parsers = [{ Parser: ESP3Parser, name: 'ESP3parser' }, { Parser: ESP3CallbackParser, name: 'ESP3CallbackParser' }]
 const sinon = require('sinon')
 
