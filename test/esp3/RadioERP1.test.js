@@ -293,6 +293,11 @@ describe('RadioERP1 packets', () => {
   })
   const table = Object.entries(EEP).filter(([name, desc]) => Array.isArray(desc.case)).flatMap(([name, desc]) => desc.case.map((case_, i) => ([name, i, desc, case_])))
   describe.each(table)('Roundtrip %s Case %i', (eep, index, desc, case_) => {
+
+    function arrayOrSingle(v){
+      return (Array.isArray(v)) ? v: [v]
+    }
+
     function eep2JSON (c, eep, channel) {
       var msg = {
         data: {},
@@ -302,8 +307,8 @@ describe('RadioERP1 packets', () => {
         }
       }
 
-      c.datafield && c.datafield.forEach(item => {
-        if (!item.reserved) {
+      c.datafield && arrayOrSingle(c.datafield).forEach(item => {
+        if (!item.reserved && typeof item.shortcut === 'string') {
           if (item.enum && item.enum.item) {
             if (item.shortcut === 'LRNB') {
               msg.data[item.shortcut] = 1
@@ -314,6 +319,8 @@ describe('RadioERP1 packets', () => {
               const val = parseInt(item.enum.item.value)
               msg.data[item.shortcut] = isNaN(val) ? 0 : val
             }
+          } else if (Array.isArray(item.enum)){
+            msg.data[item.shortcut] = parseInt(item.enum[0].item.value)
           } else if (item.scale) {
             msg.data[item.shortcut] = parseInt(item.scale.min)
           } else {
@@ -332,6 +339,7 @@ describe('RadioERP1 packets', () => {
 
     const channel = 3
     const json = eep2JSON(case_, desc, 3)
+    console.log(json.data)
     const rorg = parseInt(eep.substr(0, 2), 16)
     const radio = RadioERP1.from({ rorg, payload: [0], id: 'ff00ff00' })
     const data = radio.encode(json.data, {
