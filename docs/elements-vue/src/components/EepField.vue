@@ -3,19 +3,21 @@
     <v-card-title>{{field.shortcut}} - {{field.description}}</v-card-title>
     <v-card-subtitle v-if="typeof field.data === 'string'" v-html="field.data"></v-card-subtitle>
     <v-card-subtitle>[{{type}}]</v-card-subtitle>
-    <span>Value is {{ innerValue }}</span>
-    <template v-if="type === 'enum'">
-      <eep-field-item v-for="item of arrayOrSingle(field.enum.item)" :model-value.sync="innerValue" :item="item"></eep-field-item>
-    </template>
-    <template v-if="type === 'range'">
-      Range
-    </template>
-    <template v-if="type === 'scale'">
-      <v-slider :min="parse(field.scale.min)" :max="parse(field.scale.max)" v-model="innerValue"></v-slider>
-    </template>
-    <template v-if="type === 'bitmsk'">
-      Bitmask
-    </template>
+    <v-card-text>
+      <span>Value is {{ innerValue }}</span>
+      <template v-if="type === 'enum'">
+        <eep-field-item v-for="item of arrayOrSingle(field.enum.item)" :model-value.sync="innerValue" :item="item" :writable="writable"></eep-field-item>
+      </template>
+      <template v-if="type === 'range'">
+        Range
+      </template>
+      <template v-if="type === 'scale'">
+        <v-slider :min="parse(field.scale.min)" :max="parse(field.scale.max)" v-model="innerValue" :readonly="!writable"></v-slider>
+      </template>
+      <template v-if="type === 'bitmsk'">
+        Bitmask
+      </template>
+    </v-card-text>
   </v-card>
 </template>
 
@@ -45,10 +47,13 @@ export default class extends Vue {
 
   set innerValue(value: number) {
     this.myInnerValue = value
-    this.$emit('update:ModelValue', value)
+    this.$emit('update:modelValue', value)
   }
 
   private myInnerValue = 0
+
+  @Prop({default:false, required: false, type:Boolean})
+  private writable: boolean | undefined
 
   @Prop({required: true, type:Object})
   private field: DatafieldElement|undefined;

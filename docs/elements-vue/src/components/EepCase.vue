@@ -20,8 +20,9 @@
         </template>
       </v-card-text>
     </template>
-
-    <eep-field v-for="field of unreserved" :field="field" :model-value="getValue(field)"></eep-field>
+    <v-card-text v-for="field of unreserved" >
+      <eep-field :field="field" :model-value="getValue(field)" @update:modelValue="fieldUpdated(field,$event)" :writable="writable"></eep-field>
+    </v-card-text>
     <span v-for="field of eepCase.statusfield">{{field.data}} = {{field.value}}, </span>
   </v-card>
 </template>
@@ -43,6 +44,8 @@ function arrayOrSingle<T>(el: T[]|T): T[]{
   components: {EepField}
 })
 export default class extends Vue {
+  @Prop({default:false, required: false, type:Boolean})
+  private writable: boolean | undefined
   @Prop()
   private eep: Eep | undefined
   @Prop()
@@ -69,6 +72,10 @@ export default class extends Vue {
     } else {
       return undefined
     }
+  }
+
+  fieldUpdated(field: DatafieldElement, value: Number){
+    this.$emit('update:fieldValue', {field, value})
   }
 
   private arrayOrSingle = arrayOrSingle;

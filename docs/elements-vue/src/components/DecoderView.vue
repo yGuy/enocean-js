@@ -3,7 +3,7 @@
     <v-card-title>Decoder</v-card-title>
     <v-card-text>
       <radio-view v-model="message"></radio-view>
-      <eep-case v-if="eep && eep_case" :eep="eep" :eep-case="eep_case" :decoded-value="decodedValue"></eep-case>
+      <eep-case v-if="eep && eep_case" :eep="eep" :eep-case="eep_case" :decoded-value="decodedValue" @update:fieldValue="updateField"></eep-case>
     </v-card-text>
   </v-card>
 </template>
@@ -12,7 +12,7 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import EepCase from "./EepCase.vue";
-import {Case, Eep} from "@enocean-js/eep-transcoder";
+import {Case, DatafieldElement, Eep} from "@enocean-js/eep-transcoder";
 import {server} from "./Server";
 import {devices} from "@/components/Devices";
 import RadioView from "@/components/RadioView.vue";
@@ -67,6 +67,10 @@ export default class extends Vue{
     } else {
       return null;
     }
+  }
+
+  updateField(field: DatafieldElement, value: number){
+
   }
 }
 </script>
