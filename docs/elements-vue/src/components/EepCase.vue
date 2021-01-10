@@ -21,7 +21,7 @@
       </v-card-text>
     </template>
 
-    <eep-field v-for="field of unreserved" :field="field"></eep-field>
+    <eep-field v-for="field of unreserved" :field="field" :model-value="getValue(field)"></eep-field>
     <span v-for="field of eepCase.statusfield">{{field.data}} = {{field.value}}, </span>
   </v-card>
 </template>
@@ -29,9 +29,10 @@
 <script lang="ts">
 import {Prop, Vue} from "vue-property-decorator";
 
-import {Case, Eep} from '@enocean-js/eep-transcoder';
+import {Case, DatafieldElement, Eep} from '@enocean-js/eep-transcoder';
 import Component from "vue-class-component";
 import EepField from "@/components/EepField.vue";
+import {parse} from "@/components/Server";
 
 function arrayOrSingle<T>(el: T[]|T): T[]{
   return Array.isArray(el) ? el : [el]
@@ -47,11 +48,27 @@ export default class extends Vue {
   @Prop()
   private eepCase: Case |undefined
 
+  @Prop({required:false, default:{}, type: Object})
+  private decodedValue: any | undefined
+
   private baseid: string  |undefined
   private channel: string |undefined
 
   get unreserved(){
     return arrayOrSingle(this.eepCase!.datafield).filter(field => !field.reserved)
+  }
+
+
+  getValue(field: DatafieldElement) : Number |undefined{
+    if (this.decodedValue && typeof field.shortcut === 'string'){
+      if (this.decodedValue[field.shortcut]){
+        return parse(this.decodedValue[field.shortcut].value)
+      } else if (this.decodedValue[field.shortcut.toLowerCase()]){
+        return parse(this.decodedValue[field.shortcut.toLowerCase()].value)
+      }
+    } else {
+      return undefined
+    }
   }
 
   private arrayOrSingle = arrayOrSingle;

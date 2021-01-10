@@ -3,6 +3,8 @@ import VueRouter, { RouteConfig } from 'vue-router'
 import Home from '../views/Home.vue'
 import Logger from "@/components/Logger.vue";
 import DeviceList from "@/components/DeviceList.vue";
+import DecoderView from "@/components/DecoderView.vue";
+import RadioView from "@/components/RadioView.vue";
 
 Vue.use(VueRouter)
 
@@ -16,6 +18,16 @@ const routes: Array<RouteConfig> = [
     path: '/log',
     name: 'Logger',
     component: Logger
+  },
+  {
+    path: '/decode/:message/:eep?',
+    name: 'Decoder',
+    component: DecoderView
+  },
+  {
+    path: '/radio/:message',
+    name: 'Radio',
+    component: RadioView
   },
   {
     path: '/devices',

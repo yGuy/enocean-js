@@ -3,15 +3,15 @@
     <v-card-title>{{field.shortcut}} - {{field.description}}</v-card-title>
     <v-card-subtitle v-if="typeof field.data === 'string'" v-html="field.data"></v-card-subtitle>
     <v-card-subtitle>[{{type}}]</v-card-subtitle>
-    <span>Value is {{modelValue}}</span>
+    <span>Value is {{ innerValue }}</span>
     <template v-if="type === 'enum'">
-      <eep-field-item v-for="item of arrayOrSingle(field.enum.item)" :model-value.sync="modelValue" :item="item"></eep-field-item>
+      <eep-field-item v-for="item of arrayOrSingle(field.enum.item)" :model-value.sync="innerValue" :item="item"></eep-field-item>
     </template>
     <template v-if="type === 'range'">
       Range
     </template>
     <template v-if="type === 'scale'">
-      <v-slider :min="parse(field.scale.min)" :max="parse(field.scale.max)" v-model="modelValue"></v-slider>
+      <v-slider :min="parse(field.scale.min)" :max="parse(field.scale.max)" v-model="innerValue"></v-slider>
     </template>
     <template v-if="type === 'bitmsk'">
       Bitmask
@@ -23,55 +23,52 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import {DatafieldElement, ItemElement} from '@enocean-js/eep-transcoder';
-import {Prop} from "vue-property-decorator";
+import {Prop, Watch} from "vue-property-decorator";
 import EepFieldItem from "@/components/EepFieldItem.vue";
+import {parse} from "@/components/Server";
 
-function parseValue (v:string):number {
-  let radix;
-  try {
-    radix = v.toString().substr(0, 2)
-  } catch (err) {
-    console.log(v)
-    return 0
-  }
-  switch (radix) {
-    case '0b':
-      return parseInt(v.replace('0b', ''), 2)
-    case '0x':
-      return parseInt(v.replace('0x', ''), 16)
-    case '0o':
-      return parseInt(v.replace('0o', ''), 8)
-    default:
-      return parseInt(v)
-  }
-}
-function getType (item:ItemElement|DatafieldElement) : undefined |'enum'|'scale'|'range'|'bitmsk' {
+export function getType (item:ItemElement|DatafieldElement) : undefined |'enum'|'scale'|'range'|'bitmsk' {
   if ((item as DatafieldElement).enum) return 'enum'
   if (item.range && item.scale) return 'scale'
   if (item.range) return 'range'
   if ((item as ItemElement).bitmask) return 'bitmsk'
 }
+
+
 @Component({
   components: {EepFieldItem}
 })
 export default class extends Vue {
+  get innerValue(): number {
+    return typeof this.modelValue !== "undefined" ? this.modelValue : this.myInnerValue
+  }
+
+  set innerValue(value: number) {
+    this.myInnerValue = value
+    this.$emit('update:ModelValue', value)
+  }
+
+  private myInnerValue = 0
+
   @Prop({required: true, type:Object})
   private field: DatafieldElement|undefined;
 
-  @Prop({required: true, type: Number})
-  private value: number | undefined
+  @Prop({required: false, type: Number, default: 0})
+  private modelValue: number | undefined
 
-  private modelValue: number = 0
-
-  parse(value: number | string | undefined): Number{
-    if (typeof value === "string"){
-      return parseValue(value);
-    } else if (typeof value === "number"){
-      return value
-    } else {
-      return 0;
+  @Watch('modelValue', {immediate: true})
+  modeValueChanged(old: number){
+    if (this.modelValue){
+      this.myInnerValue = this.modelValue
     }
   }
+
+  mounted(){
+    this.myInnerValue = 0
+  }
+
+
+  private parse = parse;
 
   arrayOrSingle<T>(el: T[]|T): T[]{
     return Array.isArray(el) ? el : [el]

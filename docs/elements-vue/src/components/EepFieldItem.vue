@@ -46,8 +46,8 @@ export default class extends Vue {
   @Prop({required: true, type:Object})
   private item: ItemElement | undefined;
 
-  @Prop({required: false, type:Object})
-  private modelValue: string | number | undefined;
+  @Prop({required: false, type:Number, default: 0})
+  private modelValue: number | undefined;
 
   get unused(){
     return !this.item || this.item.description === 'not used' || this.item.description === 'Not used'

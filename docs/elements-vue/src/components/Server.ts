@@ -1,5 +1,6 @@
 import {Device} from "@/components/Device";
 import {RadioERP1} from "@enocean-js/radio-erp1";
+import {Case, decodeAll, Eep} from "@enocean-js/eep-transcoder";
 
 export enum State {DISCONNECTED= "DISCONNECTED", CONNECTED = "CONNECTED", CONNECTING = "CONNECTING", ERROR = "ERROR"}
 export type Message = {time: number, message: any}
@@ -8,6 +9,8 @@ export type Message = {time: number, message: any}
 type MessageListener = (arg: Message) => void;
 
 type StateListener = (arg: {state: State}) => void;
+
+type DecodeResult = { eep: Eep, eepCase: Case, data: any}
 
 class Server {
     get state(): State {
@@ -94,16 +97,14 @@ class Server {
         }
     }
 
-    decode(message: string, devices: Device[]): any[] {
+    decode(message: string, devices: Device[]): DecodeResult[] {
         const radio = RadioERP1.from(message)
-        const results: any[] = []
+        const results: DecodeResult[] = []
         devices.filter(d => d.address.toLowerCase() === radio.senderId).forEach(d => {
             d.validEeps.forEach(eep => {
                 eep = eep.toLowerCase()
                 if (Number.parseInt(eep.substr(0,2), 16) === radio.RORG){
-                    console.log('decode ' +message+  ' as ' + eep)
-                    const decoded = radio.decode(eep, "1");
-                    results.push({decoded, device:d})
+                    results.push(decodeAll(radio, eep, "1"))
                 }
             })
         })
@@ -118,3 +119,33 @@ class Server {
 }
 
 export const server = new Server();
+
+function parseValue(v: string): number {
+    let radix;
+    try {
+        radix = v.toString().substr(0, 2)
+    } catch (err) {
+        console.log(v)
+        return 0
+    }
+    switch (radix) {
+        case '0b':
+            return parseInt(v.replace('0b', ''), 2)
+        case '0x':
+            return parseInt(v.replace('0x', ''), 16)
+        case '0o':
+            return parseInt(v.replace('0o', ''), 8)
+        default:
+            return parseInt(v)
+    }
+}
+
+export function parse(value: number | string | undefined): Number {
+    if (typeof value === "string") {
+        return parseValue(value);
+    } else if (typeof value === "number") {
+        return value
+    } else {
+        return 0;
+    }
+}

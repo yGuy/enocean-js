@@ -2,14 +2,14 @@
   <v-card>
     <v-card-text>
       <v-text-field v-model="connection" :disabled="state !== 'DISCONNECTED'"></v-text-field>
-      <span>{{state}}</span>
+      <span>{{ state }}</span>
     </v-card-text>
     <v-card-actions>
       <v-btn @click="toggle()" v-text="'Toggle Connection'"></v-btn>
       <v-btn @click="clear()">Clear Log</v-btn>
     </v-card-actions>
     <v-card-text>
-      <v-data-table dense :headers="headers" :items="items">
+      <v-data-table @click:row="currentMessage = $event" dense :headers="headers" :items="items">
         <template v-slot:item.actions="{ item }">
           <v-icon
               small
@@ -17,6 +17,20 @@
               @click="decode(item)"
           >
             mdi-pencil
+          </v-icon>
+          <v-icon
+              small
+              class="mr-2"
+              @click="$router.push({path:`/radio/${item.message}`})"
+          >
+            mdi-arrow-right-box
+          </v-icon>
+          <v-icon
+              small
+              class="mr-2"
+              @click="$router.push({path:`/decode/${item.message}`})"
+          >
+            mdi-arrow-down-box
           </v-icon>
           <v-icon
               small
@@ -32,6 +46,9 @@
       <v-card-actions>
         <v-btn @click="send()" :disabled="state !== 'CONNECTED'">Send Message</v-btn>
       </v-card-actions>
+    </v-card-text>
+    <v-card-text>
+      <radio-message v-if="currentMessage" :message="currentMessage.message"/>
     </v-card-text>
     <v-card-title>
       Decoded
@@ -52,55 +69,63 @@ import {devices} from "@/components/Devices";
 // @ts-ignore
 // noinspection TypeScriptCheckImport
 import JsonViewer from 'vue-json-viewer';
+import RadioMessage from "@/components/RadioMessage.vue";
 
-@Component({ components: {JsonViewer}})
+@Component({components: {RadioMessage, JsonViewer}})
 export default class extends Vue {
-  private connection : string = "ws://raspberrypi.fritz.box:1880/ws/enocean"
+  private connection: string = "ws://raspberrypi.fritz.box:1880/ws/enocean"
   private state: State = State.DISCONNECTED;
-  private message : string = ""
+  private message: string = ""
   private decoded: any = {}
 
-  toggle(){
-    if (server.state !== State.DISCONNECTED){
+  private currentMessage: Message | null = null
+
+  toggle() {
+    if (server.state !== State.DISCONNECTED) {
       server.disconnect();
     } else {
       server.connect(this.connection)
     }
   }
 
-  mounted(){
+  mounted() {
     this.state = server.state
     this.items = []
     server.addStateListener(arg => {
       this.state = arg.state
     })
-    server.addMessageListener( arg => {
+    server.addMessageListener(arg => {
       this.items.push(arg)
     })
-    for (let m of server.messages){
+    for (let m of server.messages) {
       this.items.push(m)
     }
     this.state = server.state
   }
 
-  send(){
+  send() {
     server.send(this.message)
   }
 
-  clear(){
+  clear() {
     this.items = []
   }
 
-  decode(message: Message){
-    this.decoded = server.decode(message.message, devices)
+  decode(message: Message) {
+    this.decoded = server.decode(message.message, devices)[0].data
   }
 
-  deleteMessage(message:Message){
+  deleteMessage(message: Message) {
     this.items.splice(this.items.indexOf(message), 1)
   }
 
   private items: Message[] = []
-  private headers = [{text:'Time', align:'start', sortable: true, value:"time"}, {text:'Message', align:'start', sortable: false, value:"message"}, {value:'actions', align:'end', sortable:false, text:'Actions'}]
+  private headers = [{text: 'Time', align: 'start', sortable: true, value: "time"}, {
+    text: 'Message',
+    align: 'start',
+    sortable: false,
+    value: "message"
+  }, {value: 'actions', align: 'end', sortable: false, text: 'Actions'}]
 }
 </script>
 
