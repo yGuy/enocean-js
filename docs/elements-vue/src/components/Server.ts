@@ -27,8 +27,7 @@ class Server {
     private _state: State = State.DISCONNECTED;
 
     constructor(){
-
-        this.connect("ws://raspberrypi.fritz.box:1880/ws/enocean")
+        this.connect("ws://node-red-websocket-server:1880/ws/enocean")
     }
 
     public messages: Message[] = [];
