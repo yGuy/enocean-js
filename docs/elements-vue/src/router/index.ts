@@ -5,6 +5,7 @@ import Logger from "@/components/Logger.vue";
 import DeviceList from "@/components/DeviceList.vue";
 import DecoderView from "@/components/DecoderView.vue";
 import RadioView from "@/components/RadioView.vue";
+import EncoderView from "@/components/EncoderView.vue";
 
 Vue.use(VueRouter)
 
@@ -23,6 +24,11 @@ const routes: Array<RouteConfig> = [
     path: '/decode/:message/:eep?',
     name: 'Decoder',
     component: DecoderView
+  },
+  {
+    path: '/encode/:eep/:address?/:channel?',
+    name: 'Encoder',
+    component: EncoderView
   },
   {
     path: '/radio/:message',

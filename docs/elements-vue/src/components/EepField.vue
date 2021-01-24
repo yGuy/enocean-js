@@ -4,15 +4,15 @@
     <v-card-subtitle v-if="typeof field.data === 'string'" v-html="field.data"></v-card-subtitle>
     <v-card-subtitle>[{{type}}]</v-card-subtitle>
     <v-card-text>
-      <span>Value is {{ innerValue }}</span>
+      <span>Value is {{ modelValue }}</span>
       <template v-if="type === 'enum'">
-        <eep-field-item v-for="item of arrayOrSingle(field.enum.item)" :model-value.sync="innerValue" :item="item" :writable="writable"></eep-field-item>
+        <eep-field-item v-for="(item,i) of arrayOrSingle(field.enum.item)" :key="i" :model-value="modelValue" @update:modelValue="$emit('update:modelValue', $event)" :item="item" :writable="writable"></eep-field-item>
       </template>
       <template v-if="type === 'range'">
         Range
       </template>
       <template v-if="type === 'scale'">
-        <v-slider :min="parse(field.scale.min)" :max="parse(field.scale.max)" v-model="innerValue" :readonly="!writable"></v-slider>
+        <v-slider :min="parse(field.scale.min)" :max="parse(field.scale.max)" :value="modelValue" @input="$emit('update:modelValue', $event)" :readonly="!writable"></v-slider>
       </template>
       <template v-if="type === 'bitmsk'">
         Bitmask
@@ -25,7 +25,7 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import {DatafieldElement, ItemElement} from '@enocean-js/eep-transcoder';
-import {Prop, Watch} from "vue-property-decorator";
+import {Prop} from "vue-property-decorator";
 import EepFieldItem from "@/components/EepFieldItem.vue";
 import {parse} from "@/components/Server";
 
@@ -40,18 +40,7 @@ export function getType (item:ItemElement|DatafieldElement) : undefined |'enum'|
 @Component({
   components: {EepFieldItem}
 })
-export default class extends Vue {
-  get innerValue(): number {
-    return typeof this.modelValue !== "undefined" ? this.modelValue : this.myInnerValue
-  }
-
-  set innerValue(value: number) {
-    this.myInnerValue = value
-    this.$emit('update:modelValue', value)
-  }
-
-  private myInnerValue = 0
-
+export default class EepField extends Vue {
   @Prop({default:false, required: false, type:Boolean})
   private writable: boolean | undefined
 
@@ -60,18 +49,6 @@ export default class extends Vue {
 
   @Prop({required: false, type: Number, default: 0})
   private modelValue: number | undefined
-
-  @Watch('modelValue', {immediate: true})
-  modeValueChanged(old: number){
-    if (this.modelValue){
-      this.myInnerValue = this.modelValue
-    }
-  }
-
-  mounted(){
-    this.myInnerValue = 0
-  }
-
 
   private parse = parse;
 

@@ -10,6 +10,9 @@
     </v-card-actions>
     <v-card-text>
       <v-data-table @click:row="currentMessage = $event" dense :headers="headers" :items="items">
+        <template v-slot:item.time="{ item }">
+          <span v-text="new Date(item.time).toString()"></span>
+        </template>
         <template v-slot:item.actions="{ item }">
           <v-icon
               small
@@ -108,11 +111,13 @@ export default class extends Vue {
   }
 
   clear() {
+    server.clear()
     this.items = []
   }
 
   decode(message: Message) {
-    this.decoded = server.decode(message.message, devices)[0].data
+    let decodeResults = server.decode(message.message, devices);
+    this.decoded = decodeResults.length > 0 ? decodeResults[0].data : {}
   }
 
   deleteMessage(message: Message) {

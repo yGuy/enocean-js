@@ -20,7 +20,7 @@
         </template>
       </v-card-text>
     </template>
-    <v-card-text v-for="field of unreserved" >
+    <v-card-text v-for="(field,i) of unreserved" :key="i">
       <eep-field :field="field" :model-value="getValue(field)" @update:modelValue="fieldUpdated(field,$event)" :writable="writable"></eep-field>
     </v-card-text>
     <span v-for="field of eepCase.statusfield">{{field.data}} = {{field.value}}, </span>
@@ -33,17 +33,13 @@ import {Prop, Vue} from "vue-property-decorator";
 import {Case, DatafieldElement, Eep} from '@enocean-js/eep-transcoder';
 import Component from "vue-class-component";
 import EepField from "@/components/EepField.vue";
-import {parse} from "@/components/Server";
-
-function arrayOrSingle<T>(el: T[]|T): T[]{
-  return Array.isArray(el) ? el : [el]
-}
+import {arrayOrSingle, parse} from "@/components/Server";
 
 
 @Component({
   components: {EepField}
 })
-export default class extends Vue {
+export default class EepCase extends Vue {
   @Prop({default:false, required: false, type:Boolean})
   private writable: boolean | undefined
   @Prop()
@@ -51,7 +47,7 @@ export default class extends Vue {
   @Prop()
   private eepCase: Case |undefined
 
-  @Prop({required:false, default:{}, type: Object})
+  @Prop({required:false, default:()=>({}), type: Object})
   private decodedValue: any | undefined
 
   private baseid: string  |undefined
@@ -70,7 +66,7 @@ export default class extends Vue {
         return parse(this.decodedValue[field.shortcut.toLowerCase()].value)
       }
     } else {
-      return undefined
+      return 0
     }
   }
 

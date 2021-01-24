@@ -1,6 +1,6 @@
 import {Device} from "@/components/Device";
 import {RadioERP1} from "@enocean-js/radio-erp1";
-import {Case, decodeAll, Eep} from "@enocean-js/eep-transcoder";
+import {Case, decodeAll, Eep, encodeData} from "@enocean-js/eep-transcoder";
 
 export enum State {DISCONNECTED= "DISCONNECTED", CONNECTED = "CONNECTED", CONNECTING = "CONNECTING", ERROR = "ERROR"}
 export type Message = {time: number, message: any}
@@ -28,6 +28,7 @@ class Server {
 
     constructor(){
 
+        this.connect("ws://raspberrypi.fritz.box:1880/ws/enocean")
     }
 
     public messages: Message[] = [];
@@ -61,6 +62,7 @@ class Server {
     send(message: any){
         if (this.state === State.CONNECTED && this.webSocket){
             this.webSocket.send(message)
+            this.message(message)
         }
     }
 
@@ -98,7 +100,7 @@ class Server {
     }
 
     decode(message: string, devices: Device[]): DecodeResult[] {
-        const radio = RadioERP1.from(message)
+        const radio = RadioERP1.from(message.toLowerCase())
         const results: DecodeResult[] = []
         devices.filter(d => d.address.toLowerCase() === radio.senderId).forEach(d => {
             d.validEeps.forEach(eep => {
@@ -111,10 +113,21 @@ class Server {
         return results;
     }
 
+    encode({eep, eepCase, sender, data, destination}: {eep:Eep, eepCase:Case, sender: number | string, destination?: string, data: any}): string {
+        let radioERP1 = RadioERP1.from({ rorg: parseInt(eep.rorg_number, 16), payload:'', id: sender })
+        radioERP1.encode(data, {eepCase})
+        destination && (radioERP1.destinationId = destination)
+        return radioERP1.toString()
+    }
+
     disconnect() {
         if (this.webSocket){
             this.webSocket.close()
         }
+    }
+
+    clear() {
+        this.messages.length = 0
     }
 }
 
@@ -148,4 +161,8 @@ export function parse(value: number | string | undefined): Number {
     } else {
         return 0;
     }
+}
+
+export function arrayOrSingle<T>(el: T[] | T): T[] {
+    return Array.isArray(el) ? el : [el]
 }

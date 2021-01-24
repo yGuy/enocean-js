@@ -55,7 +55,7 @@
           </v-col>
           <v-col cols="6" sm="6" md="4">
             <h3>CRC</h3>
-            <p>{{ radio.crc8Data.toString(16) }}</p>
+            <p>{{ radio.crc8Data && radio.crc8Data.toString(16) }}</p>
           </v-col>
         </v-row>
       </v-container>
@@ -75,7 +75,7 @@ export default class extends Vue {
 
   get radio(): RadioERP1 | null {
     if (this.message) {
-      return RadioERP1.from(this.message)
+      return RadioERP1.from(this.message.toLowerCase())
     } else {
       return null;
     }
